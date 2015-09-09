@@ -45,15 +45,39 @@ module Logarythm
           Pusher.secret = configuration.application_socket_secret
 
           ActiveSupport::Notifications.subscribe /process_action.action_controller/ do |name, start, finish, id, payload|
-            Pusher.trigger_async(configuration.application_uuid, 'process_action.action_controller', { content: { env: Rails.env, name: name, start: start, finish: finish, payload: payload.force_encoding("UTF-8").to_json } })
+            Pusher.trigger_async(configuration.application_uuid, 'process_action.action_controller', {
+              content: {
+                env: Rails.env,
+                name: name,
+                start: start,
+                finish: finish,
+                payload: payload.to_json
+              }
+            })
           end
 
           ActiveSupport::Notifications.subscribe /sql.active_record/ do |name, start, finish, id, payload|
-            Pusher.trigger_async(configuration.application_uuid, 'sql.active_record', { content: { env: Rails.env, name: name, start: start, finish: finish, payload: payload.force_encoding("UTF-8").to_json } })
+            Pusher.trigger_async(configuration.application_uuid, 'sql.active_record', {
+              content: {
+                env: Rails.env,
+                name: name,
+                start: start,
+                finish: finish,
+                payload: payload.to_json
+              }
+            })
           end
 
           ActiveSupport::Notifications.subscribe /render_template.action_view/ do |name, start, finish, id, payload|
-            Pusher.trigger_async(configuration.application_uuid, 'render_template.action_view', { content: { env: Rails.env, name: name, start: start, finish: finish, payload: payload.force_encoding("UTF-8").to_json } })
+            Pusher.trigger_async(configuration.application_uuid, 'render_template.action_view', {
+              content: {
+                env: Rails.env,
+                name: name,
+                start: start,
+                finish: finish,
+                payload: payload.to_json
+              }
+            })
           end
         end
       end

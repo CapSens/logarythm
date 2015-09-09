@@ -12,12 +12,14 @@ module Logarythm
 
   class Configuration
     attr_accessor :application_uuid
+    attr_accessor :application_envs
     attr_accessor :application_socket_id
     attr_accessor :application_socket_key
     attr_accessor :application_socket_secret
 
     def initialize
       @application_uuid          = nil
+      @application_envs          = nil
       @application_socket_id     = nil
       @application_socket_key    = nil
       @application_socket_secret = nil
@@ -31,12 +33,13 @@ module Logarythm
       if configuration.present?
         configuration_options = [
           :application_uuid,
+          :application_envs,
           :application_socket_id,
           :application_socket_key,
           :application_socket_secret
         ].map { |option| configuration.send(option).present? }.exclude?(false)
 
-        if configuration_options && [:staging, :production].include?(Rails.env.to_sym)
+        if configuration_options && configuration.application_envs.include?(Rails.env.to_sym)
           Pusher.app_id = configuration.application_socket_id
           Pusher.key    = configuration.application_socket_key
           Pusher.secret = configuration.application_socket_secret

@@ -28,8 +28,18 @@ module Logarythm
 
   class Railtie < Rails::Railtie
     config.after_initialize do
-      configuration = Logarythm.configuration
 
+      def deep_simplify_record(hsh)
+        hsh.keep_if do |h, v|
+          if v.is_a?(Hash)
+            deep_simplify_record(v)
+          else
+            v.is_a? String
+          end
+        end
+      end
+
+      configuration = Logarythm.configuration
       if configuration.present?
         configuration_options = [
           :application_uuid,
@@ -51,7 +61,7 @@ module Logarythm
                 name: name,
                 start: start,
                 finish: finish,
-                payload: Base64.encode64(payload.to_s)
+                payload: (Base64.encode64(deep_simplify_record(payload).to_json) rescue nil)
               }
             })
           end
@@ -63,7 +73,7 @@ module Logarythm
                 name: name,
                 start: start,
                 finish: finish,
-                payload: Base64.encode64(payload.to_s)
+                payload: (Base64.encode64(deep_simplify_record(payload).to_json) rescue nil)
               }
             })
           end
@@ -75,7 +85,7 @@ module Logarythm
                 name: name,
                 start: start,
                 finish: finish,
-                payload: Base64.encode64(payload.to_s)
+                payload: (Base64.encode64(deep_simplify_record(payload).to_json) rescue nil)
               }
             })
           end

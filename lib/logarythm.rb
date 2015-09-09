@@ -29,17 +29,18 @@ module Logarythm
   class Railtie < Rails::Railtie
     config.after_initialize do
 
-      def deep_simplify_record(hsh)
+      def deep_simplify_record hsh
         hsh.keep_if do |h, v|
           if v.is_a?(Hash)
             deep_simplify_record(v)
           else
-            v.is_a? String
+            v.is_a?(String) || v.is_a?(Integer)
           end
         end
       end
 
       configuration = Logarythm.configuration
+
       if configuration.present?
         configuration_options = [
           :application_uuid,

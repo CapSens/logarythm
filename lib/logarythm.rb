@@ -51,7 +51,7 @@ module Logarythm
                 name: name,
                 start: start,
                 finish: finish,
-                payload: payload.to_json
+                payload: Base64.encode64(payload.to_json)
               }
             })
           end
@@ -63,7 +63,7 @@ module Logarythm
                 name: name,
                 start: start,
                 finish: finish,
-                payload: payload.to_json
+                payload: Base64.encode64(payload.to_json)
               }
             })
           end
@@ -75,7 +75,7 @@ module Logarythm
                 name: name,
                 start: start,
                 finish: finish,
-                payload: payload.to_json
+                payload: Base64.encode64(payload.to_json)
               }
             })
           end

@@ -45,7 +45,7 @@ module Logarythm
         ].map { |option| configuration.send(option).present? }.exclude?(false)
 
         if configuration_options && configuration.application_envs.include?(Rails.env.to_sym)
-          redis = Redis.new url: configuration.host
+          redis = Redis.new url: configuration.application_host
 
           ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
             redis.publish configuration.application_uuid, {

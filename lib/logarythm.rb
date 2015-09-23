@@ -1,4 +1,5 @@
-require "logarythm/engine"
+require 'redis'
+require 'logarythm/engine'
 
 module Logarythm
   class << self
@@ -45,8 +46,11 @@ module Logarythm
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
           if configuration_options && configuration.application_envs.include?(Rails.env.to_sym)
-            repo = Git.open Rails.root, log: Logger.new(STDOUT)
-            LogJob.new.async.perform({ content: { env: Rails.env, payload: Base64.encode64(repo.log.map(&:message).join) } }.to_json, configuration)
+            Redis.current = Redis.new url: ['redis://', configuration.application_host].join
+
+            repo = Git.open Rails.root
+            commits = repo.log.map { |log| { date: log.date, sha: log.sha, message: log.message, author: { name: log.author.name, email: log.author.email } } }.to_json
+            LogJob.new.async.perform({ content: { name: :commits, env: Rails.env, payload: Base64.encode64(commits) } }.to_json, configuration)
 
             ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
               hash = {

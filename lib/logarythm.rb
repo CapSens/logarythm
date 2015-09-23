@@ -45,10 +45,8 @@ module Logarythm
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
           if configuration_options && configuration.application_envs.include?(Rails.env.to_sym)
-            redis = Redis.new url: ['redis://', configuration.application_host].join
-
             ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
-              redis.publish configuration.application_uuid, {
+              hash = {
                 content: {
                   env: Rails.env,
                   name: name,
@@ -57,15 +55,13 @@ module Logarythm
                   payload: (Base64.encode64(deep_simplify_record(payload).to_json) rescue nil)
                 }
               }.to_json
+
+              LogJob.new.async.perform hash, configuration
             end
           end
         end
       rescue Exception => e
-        puts
-        puts
-        puts e.inspect
-        puts
-        puts
+        raise e
       end
     end
   end

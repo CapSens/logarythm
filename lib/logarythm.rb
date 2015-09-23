@@ -45,6 +45,9 @@ module Logarythm
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
           if configuration_options && configuration.application_envs.include?(Rails.env.to_sym)
+            repo = Git.open Rails.root, log: Logger.new(STDOUT)
+            LogJob.new.async.perform({ content: { env: Rails.env, payload: Base64.encode64(repo.log.map(&:message).join) } }.to_json, configuration)
+
             ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
               hash = {
                 content: {

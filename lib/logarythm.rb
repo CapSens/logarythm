@@ -13,13 +13,13 @@ module Logarythm
 
   class Configuration
     attr_accessor :application_uuid
-    attr_accessor :application_envs
     attr_accessor :application_host
+    attr_accessor :application_envs
 
     def initialize
       @application_uuid = nil
-      @application_envs = nil
       @application_host = nil
+      @application_envs = nil
     end
   end
 
@@ -41,17 +41,14 @@ module Logarythm
         if configuration.present?
           configuration_options = [
             :application_uuid,
+            :application_host,
             :application_envs,
-            :application_host
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
-          if configuration_options && configuration.application_envs.include?(Rails.env.to_sym)
-            Redis.current = Redis.new url: ['redis://', configuration.application_host].join
+          if configuration_options && configuration.application_envs.select { |_| _[:name] == Rails.env.to_sym }.any?
+            Redis.current = Redis.new url: ['redis://h:', configuration.application_host].join
 
-            repo = Git.open Rails.root
-            commits = repo.log.map { |log| { date: log.date, sha: log.sha, message: log.message, author: { name: log.author.name, email: log.author.email } } }.to_json
-            LogJob.new.async.perform({ content: { name: :commits, env: Rails.env, payload: Base64.encode64(commits) } }.to_json, configuration)
-
+            LogJob.new.async.perform({ content: { name: :envs, env: Rails.env, payload: Base64.encode64(configuration.application_envs.to_json) }}.to_json, configuration)
             ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
               hash = {
                 content: {

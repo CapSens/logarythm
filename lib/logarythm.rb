@@ -1,4 +1,4 @@
-require 'redis'
+require 'socket.io-client-simple'
 require 'logarythm/engine'
 
 module Logarythm
@@ -46,21 +46,35 @@ module Logarythm
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
           if configuration_options && configuration.application_envs.select { |_| _[:name] == Rails.env.to_sym }.any?
-            Redis.current = Redis.new url: ['redis://h:', configuration.application_host].join
+            socket = SocketIO::Client::Simple.connect 'https://blooming-sands-8356.herokuapp.com'
 
-            LogJob.new.async.perform({ content: { name: :envs, env: Rails.env, payload: Base64.encode64(configuration.application_envs.to_json) }}.to_json, configuration)
-            ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
-              hash = {
-                content: {
-                  env: Rails.env,
-                  name: name,
-                  start: start,
-                  finish: finish,
-                  payload: (Base64.encode64(deep_simplify_record(payload).to_json) rescue nil)
+            socket.on :connect do
+              puts 'connected'
+              socket.emit :data, {
+                id: configuration.application_uuid,
+                action: :envs,
+                content: { data: Base64.encode64(configuration.application_envs.to_json) }
+              }
+
+              ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
+                hash = {
+                  id: configuration.application_uuid,
+                  action: :log,
+                  content: {
+                    env: Rails.env,
+                    name: name,
+                    start: start,
+                    finish: finish,
+                    data: payload
+                  }
                 }
-              }.to_json
 
-              LogJob.new.async.perform hash, configuration
+                socket.emit :data, hash
+              end
+            end
+
+            socket.on :error do |err|
+              p err
             end
           end
         end

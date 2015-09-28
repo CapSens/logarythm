@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
   s.test_files = Dir["test/**/*"]
 
   s.add_dependency "rails", "~> 4.2.3"
-  s.add_runtime_dependency 'redis'
-  s.add_runtime_dependency 'sucker_punch', '~> 1.0', '~> 1.0'
+  s.add_runtime_dependency 'socket.io-client-simple'
   s.add_development_dependency "sqlite3"
 end

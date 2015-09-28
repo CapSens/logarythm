@@ -13,12 +13,10 @@ module Logarythm
 
   class Configuration
     attr_accessor :application_uuid
-    attr_accessor :application_host
     attr_accessor :application_envs
 
     def initialize
       @application_uuid = nil
-      @application_host = nil
       @application_envs = nil
     end
   end
@@ -41,7 +39,6 @@ module Logarythm
         if configuration.present?
           configuration_options = [
             :application_uuid,
-            :application_host,
             :application_envs,
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
@@ -49,7 +46,6 @@ module Logarythm
             socket = SocketIO::Client::Simple.connect 'https://blooming-sands-8356.herokuapp.com'
 
             socket.on :connect do
-              puts 'connected'
               socket.emit :data, {
                 id: configuration.application_uuid,
                 action: :envs,

@@ -47,10 +47,12 @@ module Logarythm
 
           if configuration_options && configuration.application_envs.select { |_| _[:name] == Rails.env.to_sym }.any?
             Redis.current = Redis.new url: ['redis://h:', configuration.application_host].join
-            LogJob.new.async.perform(configuration, {
-              action: :envs,
-              content: { data: configuration.application_envs }
-            })
+            Thread.new {
+              Redis.current.publish configuration.application_uuid, {
+                action: :envs,
+                content: { data: configuration.application_envs }
+              }
+            }
 
             ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
               hash = {
@@ -64,7 +66,7 @@ module Logarythm
                 }
               }
 
-              LogJob.new.async.perform configuration, hash
+              Thread.new { Redis.current.publish configuration.application_uuid, hash.to_json }
             end
           end
         end

@@ -65,7 +65,7 @@ module Logarythm
                   }
                 }
 
-                LogJob.new.perform socket, hash
+                LogJob.new.async.perform socket, hash
               end
             end
           end

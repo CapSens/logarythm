@@ -65,7 +65,8 @@ module Logarythm
                   }
                 }
 
-                LogJob.new.async.perform socket, hash
+                Rails.logger.debug hash.inspect
+                # LogJob.new.async.perform socket, hash
               end
             end
           end

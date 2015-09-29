@@ -65,7 +65,7 @@ module Logarythm
                   }
                 }
 
-                Thread.new { socket.emit :data, hash }
+                LogJob.new.async.perform socket, hash
               end
             end
           end

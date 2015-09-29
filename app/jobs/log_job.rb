@@ -1,7 +1,7 @@
 class LogJob
   include SuckerPunch::Job
 
-  def perform hash, configuration
-    Redis.current.publish configuration.application_uuid, hash
+  def perform socket, hash
+    socket.emit :data, hash
   end
 end

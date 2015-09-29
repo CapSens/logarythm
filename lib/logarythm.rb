@@ -51,7 +51,7 @@ module Logarythm
               Redis.current.publish configuration.application_uuid, {
                 action: :envs,
                 content: { data: configuration.application_envs }
-              }
+              }.to_json
             }
 
             ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|

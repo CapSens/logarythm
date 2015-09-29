@@ -43,35 +43,33 @@ module Logarythm
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
           if configuration_options && configuration.application_envs.select { |_| _[:name] == Rails.env.to_sym }.any?
-            socket = SocketIO::Client::Simple.connect 'https://blooming-sands-8356.herokuapp.com'
+            Thread.new {
+              socket = SocketIO::Client::Simple.connect 'https://blooming-sands-8356.herokuapp.com'
 
-            socket.on :connect do
-              socket.emit :data, {
-                id: configuration.application_uuid,
-                action: :envs,
-                content: { data: Base64.encode64(configuration.application_envs.to_json) }
-              }
-
-              ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
-                hash = {
+              socket.on :connect do
+                socket.emit :data, {
                   id: configuration.application_uuid,
-                  action: :log,
-                  content: {
-                    env: Rails.env,
-                    name: name,
-                    start: start,
-                    finish: finish,
-                    data: payload
-                  }
+                  action: :envs,
+                  content: { data: Base64.encode64(configuration.application_envs.to_json) }
                 }
 
-                socket.emit :data, hash
-              end
-            end
+                ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
+                  hash = {
+                    id: configuration.application_uuid,
+                    action: :log,
+                    content: {
+                      env: Rails.env,
+                      name: name,
+                      start: start,
+                      finish: finish,
+                      data: payload
+                    }
+                  }
 
-            socket.on :error do |err|
-              p err
-            end
+                  socket.emit :data, hash
+                end
+              end
+            }
           end
         end
       rescue Exception => e

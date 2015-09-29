@@ -1,10 +1,8 @@
 class LogJob
   include SuckerPunch::Job
-  workers 1
+  workers 10
 
-  def perform socket, hash
-    # ActiveRecord::Base.connection_pool.with_connection do
-    #   socket.emit :data, hash
-    # end
+  def perform configuration, hash
+    Redis.current.publish configuration.application_uuid, hash.to_json
   end
 end

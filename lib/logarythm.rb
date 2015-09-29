@@ -1,4 +1,4 @@
-require 'socket.io-client-simple'
+require 'redis'
 require 'logarythm/engine'
 
 module Logarythm
@@ -13,10 +13,12 @@ module Logarythm
 
   class Configuration
     attr_accessor :application_uuid
+    attr_accessor :application_host
     attr_accessor :application_envs
 
     def initialize
       @application_uuid = nil
+      @application_host = nil
       @application_envs = nil
     end
   end
@@ -39,35 +41,30 @@ module Logarythm
         if configuration.present?
           configuration_options = [
             :application_uuid,
+            :application_host,
             :application_envs,
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
           if configuration_options && configuration.application_envs.select { |_| _[:name] == Rails.env.to_sym }.any?
-            SuckerPunch.exception_handler { |ex| ExceptionNotifier.notify_exception(ex) }
-            socket = SocketIO::Client::Simple.connect 'https://blooming-sands-8356.herokuapp.com'
+            Redis.current = Redis.new url: ['redis://h:', configuration.application_host].join
+            LogJob.new.async.perform(configuration, {
+              action: :envs,
+              content: { data: configuration.application_envs }
+            })
 
-            socket.on :connect do
-              socket.emit :data, {
-                id: configuration.application_uuid,
-                action: :envs,
-                content: { data: Base64.encode64(configuration.application_envs.to_json) }
+            ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
+              hash = {
+                action: :log,
+                content: {
+                  env: Rails.env,
+                  name: name,
+                  start: start,
+                  finish: finish,
+                  data: payload
+                }
               }
 
-              ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
-                hash = {
-                  id: configuration.application_uuid,
-                  action: :log,
-                  content: {
-                    env: Rails.env,
-                    name: name,
-                    start: start,
-                    finish: finish,
-                    data: payload
-                  }
-                }
-
-                socket.emit :data, hash
-              end
+              LogJob.new.async.perform configuration, hash
             end
           end
         end

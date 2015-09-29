@@ -43,6 +43,7 @@ module Logarythm
           ].map { |option| configuration.send(option).present? }.exclude?(false)
 
           if configuration_options && configuration.application_envs.select { |_| _[:name] == Rails.env.to_sym }.any?
+            SuckerPunch.exception_handler { |ex| ExceptionNotifier.notify_exception(ex) }
             socket = SocketIO::Client::Simple.connect 'https://blooming-sands-8356.herokuapp.com'
 
             socket.on :connect do

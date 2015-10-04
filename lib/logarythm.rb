@@ -12,63 +12,29 @@ module Logarythm
   end
 
   class Configuration
-    attr_accessor :application_uuid
-    attr_accessor :application_host
-    attr_accessor :application_envs
-
     def initialize
-      @application_uuid = nil
-      @application_host = nil
-      @application_envs = nil
     end
   end
 
   class Railtie < Rails::Railtie
     config.after_initialize do
       begin
-        def deep_simplify_record hsh
-          hsh.keep_if do |h, v|
-            if v.is_a?(Hash)
-              deep_simplify_record(v)
-            else
-              v.is_a?(String) || v.is_a?(Integer)
-            end
-          end
-        end
+        Redis.current = Redis.new url: ['redis://h:pbvp1nss12cm9s84fve5p8breaj@ec2-54-235-162-57.compute-1.amazonaws.com:8079'].join
+        ip_address = Socket.ip_address_list.detect{ |intf| intf.ipv4_private? }.ip_address
 
-        configuration = Logarythm.configuration
-
-        if configuration.present?
-          configuration_options = [
-            :application_uuid,
-            :application_host,
-            :application_envs,
-          ].map { |option| configuration.send(option).present? }.exclude?(false)
-
-          if configuration_options && configuration.application_envs.select { |_| _[:name] == Rails.env.to_sym }.any?
-            Redis.current = Redis.new url: ['redis://h:', configuration.application_host].join
-            Thread.new {
-              Redis.current.publish configuration.application_uuid, {
-                action: :envs,
-                content: { data: configuration.application_envs }
-              }.to_json
+        ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
+          hash = {
+            action: :log,
+            content: {
+              env: Rails.env,
+              name: name,
+              start: start,
+              finish: finish,
+              data: payload
             }
+          }.to_json
 
-            ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|
-              hash = {
-                action: :log,
-                content: {
-                  env: Rails.env,
-                  name: name,
-                  start: start,
-                  finish: finish,
-                  data: payload
-                }
-              }
-
-              Thread.new { Redis.current.publish configuration.application_uuid, hash.to_json }
-            end
-          end
+          Thread.new { Redis.current.publish ip_address, hash }
         end
       rescue Exception => e
         raise e

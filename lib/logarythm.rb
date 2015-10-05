@@ -41,8 +41,8 @@ module Logarythm
               start: start,
               finish: finish,
               data: deep_simplify_record(payload)
-            }.to_json
-          }
+            }
+          }.to_json
 
           Thread.new { Redis.current.publish ip_address, hash }
         end

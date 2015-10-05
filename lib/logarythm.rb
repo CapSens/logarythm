@@ -19,6 +19,16 @@ module Logarythm
   class Railtie < Rails::Railtie
     config.after_initialize do
       begin
+        def deep_simplify_record hsh
+          hsh.keep_if do |h, v|
+            if v.is_a?(Hash)
+              deep_simplify_record(v)
+            else
+              v.is_a?(String) || v.is_a?(Integer)
+            end
+          end
+        end
+
         Redis.current = Redis.new url: ['redis://h:pbvp1nss12cm9s84fve5p8breaj@ec2-54-235-162-57.compute-1.amazonaws.com:8079'].join
         ip_address = Socket.ip_address_list.detect{ |intf| intf.ipv4_private? }.ip_address
 
@@ -30,9 +40,9 @@ module Logarythm
               name: name,
               start: start,
               finish: finish,
-              data: payload
-            }
-          }.to_json
+              data: deep_simplify_record(payload)
+            }.to_json
+          }
 
           Thread.new { Redis.current.publish ip_address, hash }
         end

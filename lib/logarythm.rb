@@ -1,3 +1,4 @@
+require 'oj'
 require 'redis'
 require 'logarythm/engine'
 
@@ -19,13 +20,9 @@ module Logarythm
   class Railtie < Rails::Railtie
     config.after_initialize do
       begin
-        def deep_simplify_record hsh
+        def remove_if_file hsh
           hsh.keep_if do |h, v|
-            if v.is_a?(Hash)
-              deep_simplify_record(v)
-            else
-              v.is_a?(String) || v.is_a?(Integer)
-            end
+            v.is_a?(Hash) ? remove_if_file(v) : !v.is_a?(ActionDispatch::Http::UploadedFile)
           end
         end
 
@@ -40,11 +37,11 @@ module Logarythm
               name: name,
               start: start,
               finish: finish,
-              data: deep_simplify_record(payload)
+              data: remove_if_file(payload)
             }
-          }.to_json
+          }
 
-          Thread.new { Redis.current.publish ip_address, hash }
+          Thread.new { Redis.current.publish ip_address, Oj.dump(hash, mode: :compat) }
         end
       rescue Exception => e
         raise e

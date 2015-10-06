@@ -26,7 +26,7 @@ module Logarythm
           end
         end
 
-        Redis.current = Redis.new url: ['redis://h:pbvp1nss12cm9s84fve5p8breaj@ec2-54-235-162-57.compute-1.amazonaws.com:8079'].join
+        Redis.current = Redis.new url: 'redis:ec2-52-29-10-23.eu-central-1.compute.amazonaws.com:6379'
         ip_address = Socket.ip_address_list.detect{ |intf| intf.ipv4_private? }.ip_address
 
         ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|

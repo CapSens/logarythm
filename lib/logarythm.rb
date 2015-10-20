@@ -53,8 +53,8 @@ module Logarythm
           end
         end
 
-        if ENV['APOCALYPTO_URL'].present?
-          Redis.current = Redis.new url: ['redis://', ENV['APOCALYPTO_URL']].join
+        if ENV['LOGARYTHM_URL'].present?
+          Redis.current = Redis.new url: ['redis://', ENV['LOGARYTHM_URL']].join
           ip_address = Socket.ip_address_list.detect{ |intf| intf.ipv4_private? }.ip_address
 
           ActiveSupport::Notifications.subscribe /sql|controller|view/ do |name, start, finish, id, payload|

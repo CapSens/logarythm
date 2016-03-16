@@ -1,0 +1,15 @@
+engine: cappuccino
+version: 0.0.1
+actions:
+  - name: Deleting original git remote
+    commands:
+      - type: system
+        content: git remote rm origin
+  - name: Running bundle
+    commands:
+      - content: gem install bundler
+      - content: bundle
+  - name: Setting up database, migrations and seeds
+    commands:
+      - content: cp config/database.yml.example config/database.yml
+      - content: rake db:create db:migrate db:seed
